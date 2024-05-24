@@ -85,30 +85,31 @@ function getCalender($year = '', $month = ''){
 			<a href="#" class="update-event-btn">Обновить</a> 
 			<!-- form for adding an event, it gets activated by a jquery function below -->
 			<div id="event_add_frm" style="display:none;">
-        <form id="eventAddFrm" action="#">
-          <div class="form-group">
-            <label>Добавить название события:</label>
-            <input type="text" class="form-control" name="event_title" id="event_title" required>
-          </div>
-          <div class="form-group">
-            <label>Дата</label>
-            <!-- important to have id="addEvent_date" as this value will be assigned later when we get the events-->
-            <input type="text" class="form-control" name="event_date" id="addEvent_date" value="<?php echo date("Y-m-d"); ?>" readonly>
-          </div>
-          <div class="form-group">
-            <label>Добавьте другие имена пользователей для групповых мероприятий.</label>
-            <input type="text" class="form-control" name="event_group" id="event_group" required>
-          </div>
-          <div class="form-group">
-            <label>Выберите цвет события:</label>
-            <select name="event_color" id="event_color" required>
-              <option value="#ff0000">Красный (Важный)</option>
-              <option value="#FFFF00">Желтый (Обычный)</option>
-              <option value="#008000">Зеленый (Низкий приоритет)</option>
-            </select>
-          </div>
-          <input type="submit" name="event_submit" class="btn btn-default" value="Submit">
-        </form>
+        <!-- Corrected eventAddFrm form -->
+<form id="eventAddFrm" action="#">
+  <div class="form-group">
+    <label>Добавить название события:</label>
+    <input type="text" class="form-control" name="event_title" id="event_title" required>
+  </div>
+  <div class="form-group">
+    <label>Дата</label>
+    <!-- important to have id="addEvent_date" as this value will be assigned later when we get the events-->
+    <input type="text" class="form-control" name="event_date" id="addEvent_date" value="<?php echo date("Y-m-d"); ?>" readonly>
+  </div>
+  <div class="form-group">
+    <label>Добавьте другие имена пользователей для групповых мероприятий.</label>
+    <input type="text" class="form-control" name="event_group" id="event_group" required>
+  </div>
+  <div class="form-group">
+    <label>Выберите цвет события:</label>
+    <select name="event_color" id="event_color" required>
+      <option value="#ff0000">Красный (Важный)</option>
+      <option value="#FFFF00">Желтый (Обычный)</option>
+      <option value="#008000">Зеленый (Низкий приоритет)</option>
+    </select>
+  </div>
+  <input type="submit" name="event_submit" class="btn btn-default" value="Добавить"> <!-- Added the name attribute -->
+</form>
       </div>
 			<!-- form for deleting an event, it gets activated by a jquery function below -->
 			<div id="event_delete_frm" style="display:none;">
@@ -166,7 +167,7 @@ function getCalender($year = '', $month = ''){
 				<span class="top-bar__days">Sun</span>
 			</section>
 			<?php 
-  //ИЗМЕНИЛ ИВЕНТ ТУТ ВСЕ СЛОМАЛОСЬ
+  //ИЗМЕНИЛ ИВЕНТ ТУТ ВСЕ СЛОМАЛОСЬ ---------------------------------------------------------------------------------
   $dayCount = 1;
   $eventNum = 0;
   //class=""calendar__week" for displaying each day of the week
@@ -396,6 +397,47 @@ function getCalender($year = '', $month = ''){
 			});
 		});
 	</script>
+	<script type="text/javascript">
+  $(document).ready(function(){
+    // Delete event
+    $('.delete-event').click(function(){
+      var event_id = $(this).attr('data-event-id');
+      $.ajax({
+        type: 'POST',
+        url: 'functions.php',
+        data: 'func=deleteEvent&event_id=' + event_id,
+        success: function(status){
+          if(status == 1){
+            $('#event_'+event_id).remove();
+          }else{
+            alert('Error deleting event. Please try again.');
+          }
+        }
+      });
+    });
+
+    // Edit event
+    $('.edit-event').click(function(){
+      var event_id = $(this).attr('data-event-id');
+      // Get event data from database
+      $.ajax({
+        type: 'POST',
+        url: 'functions.php',
+        data: 'func=getEvent&event_id=' + event_id,
+        success: function(event_data){
+          // Fill event data into edit form
+          $('#event_update_id').val(event_data.id);
+          $('#event_update_title').val(event_data.title);
+          $('#event_update_date').val(event_data.event_date);
+          $('#event_update_group').val(event_data.event_group);
+          $('#event_update_color').val(event_data.event_color);
+          // Show edit form
+          $('#event_update_frm').slideToggle();
+        }
+      });
+    });
+  });
+</script>
 <?php
 }
 
