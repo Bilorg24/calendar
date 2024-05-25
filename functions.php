@@ -169,7 +169,7 @@ function getCalender($year = '', $month = ''){
 			<?php 
   //ИЗМЕНИЛ ИВЕНТ ТУТ ВСЕ СЛОМАЛОСЬ ---------------------------------------------------------------------------------
   $dayCount = 1;
-  $eventNum = 0;
+$eventNum = 0;
   //class=""calendar__week" for displaying each day of the week
   echo '<section class="calendar__week">';
   //starts cb=1 and loops until cb is less than the total number of days in a month
@@ -201,21 +201,21 @@ function getCalender($year = '', $month = ''){
       if(strtotime($currentDate) == strtotime(date("Y-m-d"))){
         echo '
           <div class="calendar__day today" onclick="getEvents(\''.$currentDate.'\');" style="background-color: '.$event_color.'">
-            <span class="calendar__date">'.$dayCount.'</span>
+            <span class="calendar__date" style="background-color: transparent;">'.$dayCount.'</span>
             <span class="calendar__task calendar__task--today">'.$eventTotalNum.' Events</span>
           </div>
         ';
       }elseif($eventTotalNum > 0){ //checks that number of events is not empty to display blue color and events counts
         echo '
           <div class="calendar__day event" onclick="getEvents(\''.$currentDate.'\');" style="background-color: '.$event_color.'">
-            <span class="calendar__date">'.$dayCount.'</span>
+            <span class="calendar__date" style="background-color: transparent;">'.$dayCount.'</span>
             <span class="calendar__task">'.$eventTotalNum.' Events</span>
           </div>
         ';
       }else{ //otherwise display black font and display the event count of 0
         echo '
           <div class="calendar__day no-event" onclick="getEvents(\''.$currentDate.'\');">
-            <span class="calendar__date">'.$dayCount.'</span>
+            <span class="calendar__date" style="background-color: transparent;">'.$dayCount.'</span>
             <span class="calendar__task">'.$eventTotalNum.' Events</span>
           </div>
         ';
@@ -466,40 +466,41 @@ function getYearList($selected = ''){
 	return $options;
 }
 
-//Generate events list in HTML format
-function getEvents($date = ''){
+//Generate events list in HTML format ФУНКЦИЯ ВЫВОДА ЗАДАЧ НА ДЕНЬ
+function getEvents($date = '') {
 	$_username = htmlspecialchars($_SESSION["username"]);
-	$date = $date?$date:date("Y-m-d");
-	
-	$eventListHTML = '<h2 class="sidebar__heading">'.date("l", strtotime($date)).'<br>'.date("F d", strtotime($date)).'</h2>';
-	$event_groupListHTML ='';
-	 
+	$date = $date ? $date : date("Y-m-d");
+  
+	$eventListHTML = '<h2 class="sidebar__heading">' . date("l", strtotime($date)) . '<br>' . date("F d", strtotime($date)) . '</h2>';
+	$event_groupListHTML = '';
+  
 	// Fetch events based on the specific date
 	global $db;
-	$result = $db->query("SELECT title FROM events WHERE event_date = '".$date."' AND event_status = 1 AND username = '$_username' ");
-	$group_result = $db->query("SELECT title FROM share WHERE event_date = '".$date."' AND username = '$_username' ");
-	if($result->num_rows > 0){
-		$eventListHTML .= '<ul class="sidebar__list">';
-		$eventListHTML .= '<li class="sidebar__list-item sidebar__list-item--complete">Events</li>';
-		$i=0;
-		while($row = $result->fetch_assoc()){ $i++;
-            $eventListHTML .= '<li class="sidebar__list-item"><span class="list-item__time">'.$i.'.</span>'.$row['title'].'</li>';
-        }
-		$eventListHTML .= '</ul>';
+	$result = $db->query("SELECT title, event_id FROM events WHERE event_date = '" . $date . "' AND event_status = 1 AND username = '" . $_username . "' ");
+	$group_result = $db->query("SELECT title FROM share WHERE event_date = '" . $date . "' AND username = '" . $_username . "' ");
+	if ($result->num_rows > 0) {
+	  $eventListHTML .= '<ul class="sidebar__list">';
+	  $eventListHTML .= '<li class="sidebar__list-item sidebar__list-item--complete">Events</li>';
+	  $i = 0;
+	  while ($row = $result->fetch_assoc()) {
+		$i++;
+		$eventListHTML .= '<li class="sidebar__list-item"><span class="list-item__time">' . $i . '.</span>' . $row['title'] . ' <button class="btn btn-sm btn-danger" onclick="deleteEvent(' . $row['event_id'] . ')">X</button></li>';
+	  }
+	  $eventListHTML .= '</ul>';
 	}
-	if($group_result->groupnum_rows > 0){
-		$event_groupListHTML .= '<ul class="sidebar__list">';
-		$event_groupListHTML .= '<li class="sidebar__list-item sidebar__list-item--complete">Group Events:</li>';
-		$i=0;
-		while($row = $group_result->fetch_assoc()){ $i++;
-            $event_groupListHTML .= '<li class="sidebar__list-item"><span class="list-item__time">'.$i.'.</span>'.$row['title'].'</li>';
-        }
-		$event_groupListHTML .= '</ul>';
+	if ($group_result->groupnum_rows > 0) {
+	  $event_groupListHTML .= '<ul class="sidebar__list">';
+	  $event_groupListHTML .= '<li class="sidebar__list-item sidebar__list-item--complete">Group Events:</li>';
+	  $i = 0;
+	  while ($row = $group_result->fetch_assoc()) {
+		$i++;
+		$event_groupListHTML .= '<li class="sidebar__list-item"><span class="list-item__time">' . $i . '.</span>' . $row['title'] . '</li>';
+	  }
+	  $event_groupListHTML .= '</ul>';
 	}
 	echo $eventListHTML;
 	echo $event_groupListHTML;
-
-}
+  }
 
 //Insert events in the database 
 function addEvent($postData) {
@@ -522,24 +523,26 @@ function addEvent($postData) {
 
 
 //delete events from the database
-function deleteEvent($postData){
+function deleteEvent($event_id) {
 	$_username = htmlspecialchars($_SESSION["username"]);
 	$status = 0;
-
-	if(!empty($postData['event_title']) && !empty($postData['event_date'])){
-		global $db;
-		$event_title = $db->real_escape_string($postData['event_title']);
-		$new_group = $db->real_escape_string($postData['event_group']);
-		//makes sure that only the username in session is able to delete their own events and not others. 
-		$insert = $db->query("DELETE FROM events WHERE title='".$event_title."' AND username = '$_username' ");
-		$insert .= $db->query("DELETE FROM share WHERE title='".$event_title."' AND username = '$new_group' ");
-		if($insert) {
-			$status = 1;
+  
+	if (!empty($event_id)) {
+	  global $db;
+	  // Убедитесь, что событие принадлежит текущему пользователю
+	  $event_id = $db->real_escape_string($event_id);
+	  $result = $db->query("SELECT * FROM events WHERE event_id = '" . $event_id . "' AND username = '" . $_username . "'");
+	  if ($result->num_rows > 0) {
+		// Удалите событие
+		$delete = $db->query("DELETE FROM events WHERE event_id = '" . $event_id . "'");
+		if ($delete) {
+		  $status = 1;
 		}
+	  }
 	}
-	
+  
 	echo $status;
-}
+  }
 //DELETE FROM events WHERE title = 'LauraVisitsMiami' AND username = 'Laura';
 
 //update events on the database
