@@ -466,7 +466,7 @@ function getYearList($selected = ''){
 	return $options;
 }
 
-//Generate events list in HTML format ФУНКЦИЯ ВЫВОДА ЗАДАЧ НА ДЕНЬ
+//Generate events list in HTML format ФУНКЦИЯ ВЫВОДА СОБЫТИЙ НА ДЕНЬ
 function getEvents($date = '') {
 	$_username = htmlspecialchars($_SESSION["username"]);
 	$date = $date ? $date : date("Y-m-d");
@@ -474,10 +474,10 @@ function getEvents($date = '') {
 	$eventListHTML = '<h2 class="sidebar__heading">' . date("l", strtotime($date)) . '<br>' . date("F d", strtotime($date)) . '</h2>';
 	$event_groupListHTML = '';
   
-	// Fetch events based on the specific date
 	global $db;
 	$result = $db->query("SELECT title, event_id FROM events WHERE event_date = '" . $date . "' AND event_status = 1 AND username = '" . $_username . "' ");
 	$group_result = $db->query("SELECT title FROM share WHERE event_date = '" . $date . "' AND username = '" . $_username . "' ");
+  
 	if ($result->num_rows > 0) {
 	  $eventListHTML .= '<ul class="sidebar__list">';
 	  $eventListHTML .= '<li class="sidebar__list-item sidebar__list-item--complete">Events</li>';
@@ -488,7 +488,8 @@ function getEvents($date = '') {
 	  }
 	  $eventListHTML .= '</ul>';
 	}
-	if ($group_result->groupnum_rows > 0) {
+  
+	if ($group_result->num_rows > 0) {
 	  $event_groupListHTML .= '<ul class="sidebar__list">';
 	  $event_groupListHTML .= '<li class="sidebar__list-item sidebar__list-item--complete">Group Events:</li>';
 	  $i = 0;
@@ -498,8 +499,8 @@ function getEvents($date = '') {
 	  }
 	  $event_groupListHTML .= '</ul>';
 	}
-	echo $eventListHTML;
-	echo $event_groupListHTML;
+  
+	echo $eventListHTML . $event_groupListHTML;
   }
 
 //Insert events in the database 
@@ -523,24 +524,21 @@ function addEvent($postData) {
 
 
 //delete events from the database
-function deleteEvent($event_id) {
+function deleteEvent($postData){
 	$_username = htmlspecialchars($_SESSION["username"]);
 	$status = 0;
   
-	if (!empty($event_id)) {
+	if(!empty($postData['event_id'])){
+	  $event_id = $postData['event_id'];
 	  global $db;
-	  // Убедитесь, что событие принадлежит текущему пользователю
-	  $event_id = $db->real_escape_string($event_id);
-	  $result = $db->query("SELECT * FROM events WHERE event_id = '" . $event_id . "' AND username = '" . $_username . "'");
-	  if ($result->num_rows > 0) {
-		// Удалите событие
-		$delete = $db->query("DELETE FROM events WHERE event_id = '" . $event_id . "'");
-		if ($delete) {
-		  $status = 1;
-		}
+	  
+	  //makes sure that only the username in session is able to delete their own events and not others. 
+	  $delete = $db->query("DELETE FROM events WHERE event_id='".$event_id."' AND username = '$_username' ");
+	  if($delete) {
+		$status = 1;
 	  }
 	}
-  
+	
 	echo $status;
   }
 //DELETE FROM events WHERE title = 'LauraVisitsMiami' AND username = 'Laura';
@@ -566,3 +564,4 @@ function updateEvent($postData){
 	
 	echo $status;
 }
+?>
